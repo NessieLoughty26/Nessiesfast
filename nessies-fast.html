@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nessie's Fast 🍑</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" id="appleIcon" href="">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nessie's Fast">
+<script>
+// Generate peach icon as data URL and inject before page loads
+(function() {
+  const c = document.createElement('canvas');
+  c.width = 180; c.height = 180;
+  const ctx = c.getContext('2d');
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 180, 180);
+  bg.addColorStop(0, '#FFD4B8');
+  bg.addColorStop(1, '#FFAB76');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, 180, 180, 38);
+  ctx.fill();
+
+  // Peach body
+  ctx.save();
+  ctx.translate(90, 100);
+
+  // Left lobe
+  const peachGrad = ctx.createRadialGradient(-10, -5, 5, 0, 10, 65);
+  peachGrad.addColorStop(0, '#FFE0C0');
+  peachGrad.addColorStop(0.5, '#FFAB76');
+  peachGrad.addColorStop(1, '#FF8C50');
+  ctx.fillStyle = peachGrad;
+  ctx.beginPath();
+  ctx.arc(-18, 0, 40, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Right lobe
+  ctx.beginPath();
+  ctx.arc(18, 0, 40, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Crease line
+  ctx.strokeStyle = 'rgba(220,100,50,0.25)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, -30);
+  ctx.quadraticCurveTo(4, 0, 0, 32);
+  ctx.stroke();
+
+  // Leaf
+  ctx.fillStyle = '#6DBF82';
+  ctx.beginPath();
+  ctx.ellipse(8, -44, 14, 7, -0.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stem
+  ctx.strokeStyle = '#5A9E6A';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, -38);
+  ctx.quadraticCurveTo(6, -52, 4, -58);
+  ctx.stroke();
+
+  ctx.restore();
+
+  const url = c.toDataURL('image/png');
+  document.getElementById('appleIcon').href = url;
+})();
+</script>
+<style>
+  :root {
+    --peach: #FFAB76;
+    --peach-light: #FFE4CE;
+    --peach-pale: #FFF6F0;
+    --peach-dark: #E8845A;
+    --peach-glow: #FFB88C;
+    --cream: #FFFCFA;
+    --blush: #F9C5B0;
+    --coral: #FF7D5A;
+    --mint: #B8E8D8;
+    --mint-light: #E0F7F0;
+    --sky: #C5DFF8;
+    --text-dark: #3A2418;
+    --text-mid: #7A4A35;
+    --text-soft: #B07060;
+    --white: #FFFFFF;
+    --shadow: rgba(232,132,90,0.15);
+    --shadow-strong: rgba(232,132,90,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,171,118,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(249,197,176,0.1) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 90px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 52px 24px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: -0.3px;
+  }
+  .header-logo span { color: var(--peach-dark); font-style: italic; }
+  .header-date {
+    font-size: 12px;
+    color: var(--text-soft);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── TABS ── */
+  .tab-content { display: none; padding: 0 20px; }
+  .tab-content.active { display: block; }
+
+  /* ── CLOCK RING ── */
+  .clock-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 20px 24px;
+  }
+
+  .clock-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 20px;
+  }
+
+  .clock-svg {
+    width: 220px;
+    height: 220px;
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg {
+    fill: none;
+    stroke: var(--peach-light);
+    stroke-width: 14;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke: url(#peachGradient);
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-dasharray: 628.3;
+    stroke-dashoffset: 628.3;
+    transition: stroke-dashoffset 1s ease;
+    filter: drop-shadow(0 0 6px rgba(255,171,118,0.5));
+  }
+
+  .clock-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .clock-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-soft);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .clock-time {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .clock-phase {
+    font-size: 11px;
+    color: var(--peach-dark);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    justify-content: center;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--peach) 0%, var(--coral) 100%);
+    color: white;
+    padding: 13px 28px;
+    box-shadow: 0 4px 16px rgba(232,132,90,0.35);
+  }
+  .btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(232,132,90,0.3); }
+
+  .btn-secondary {
+    background: var(--white);
+    color: var(--text-mid);
+    padding: 13px 20px;
+    border: 1.5px solid var(--peach-light);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .btn-secondary:active { transform: scale(0.97); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-soft);
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  /* ── START TIME PICKER ── */
+  .start-time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border: 1.5px solid var(--peach-light);
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin: 0 auto 16px;
+    max-width: 280px;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .start-time-row label {
+    font-size: 12px;
+    color: var(--text-soft);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .start-time-row input[type="datetime-local"] {
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-dark);
+    outline: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ── FACT CARD ── */
+  .fact-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 0 0 12px;
+    box-shadow: 0 3px 16px var(--shadow);
+    border: 1px solid rgba(255,171,118,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .fact-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255,212,184,0.5) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .fact-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--peach-pale);
+    color: var(--peach-dark);
+    border-radius: 50px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .fact-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--text-dark);
+    font-style: italic;
+  }
+
+  .fact-sub {
+    font-size: 12px;
+    color: var(--text-soft);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* ── PROGRESS BAR MINI ── */
+  .phase-bar-wrap {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin: 0 0 12px;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .phase-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .phase-bar-track {
+    height: 8px;
+    background: var(--peach-light);
+    border-radius: 50px;
+    overflow: hidden;
+  }
+  .phase-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--peach) 0%, var(--coral) 100%);
+    border-radius: 50px;
+    transition: width 1s ease;
+  }
+  .phase-dots {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .phase-dot {
+    font-size: 9px;
+    color: var(--text-soft);
+    text-align: center;
+    flex: 1;
+  }
+  .phase-dot.active { color: var(--coral); font-weight: 600; }
+
+  /* ── HISTORY TAB ── */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+  }
+  .section-sub {
+    font-size: 12px;
+    color: var(--text-soft);
+    margin-bottom: 18px;
+  }
+
+  .streak-card {
+    background: linear-gradient(135deg, var(--peach) 0%, var(--coral) 100%);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 14px;
+    color: white;
+    box-shadow: 0 6px 20px rgba(232,132,90,0.3);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .streak-icon { font-size: 36px; line-height: 1; }
+  .streak-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .streak-info { flex: 1; }
+  .streak-label { font-size: 11px; opacity: 0.85; letter-spacing: 0.8px; text-transform: uppercase; }
+  .streak-sub { font-size: 13px; margin-top: 4px; opacity: 0.9; }
+
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .history-item {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 10px var(--shadow);
+    border: 1px solid rgba(255,171,118,0.1);
+  }
+
+  .history-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .history-icon.success { background: var(--mint-light); }
+  .history-icon.partial { background: var(--peach-pale); }
+  .history-icon.fail { background: #FFF0F0; }
+
+  .history-meta { flex: 1; }
+  .history-date { font-size: 12px; color: var(--text-soft); }
+  .history-dur {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+  .history-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 50px;
+    font-weight: 500;
+  }
+  .badge-success { background: var(--mint-light); color: #3D9970; }
+  .badge-partial { background: var(--peach-pale); color: var(--peach-dark); }
+
+  .quote-card {
+    background: var(--peach-pale);
+    border-radius: 18px;
+    padding: 18px;
+    margin: 14px 0;
+    border-left: 3px solid var(--peach);
+  }
+  .quote-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--text-dark);
+    line-height: 1.6;
+  }
+  .quote-author { font-size: 11px; color: var(--text-soft); margin-top: 6px; }
+
+  /* ── TIPS TAB ── */
+  .tip-card {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px var(--shadow);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .tip-emoji { font-size: 24px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+  .tip-title { font-weight: 500; font-size: 14px; color: var(--text-dark); margin-bottom: 4px; }
+  .tip-text { font-size: 12px; color: var(--text-soft); line-height: 1.55; }
+
+  .tip-category {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 10px;
+  }
+  .tip-category-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .tip-category-line {
+    flex: 1;
+    height: 1px;
+    background: var(--peach-light);
+  }
+
+  /* ── SETTINGS TAB ── */
+  .settings-section {
+    background: var(--white);
+    border-radius: 18px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .settings-section-header {
+    padding: 14px 18px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    border-bottom: 1px solid var(--peach-pale);
+  }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--peach-pale);
+    gap: 12px;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-label { flex: 1; }
+  .settings-row-label .label-main { font-size: 14px; color: var(--text-dark); font-weight: 500; }
+  .settings-row-label .label-sub { font-size: 11px; color: var(--text-soft); margin-top: 1px; }
+
+  select, input[type="time"] {
+    border: 1.5px solid var(--peach-light);
+    background: var(--peach-pale);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-dark);
+    outline: none;
+  }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--peach-light);
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+    border: none;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .toggle.on { background: var(--peach-dark); }
+  .toggle.on::after { transform: translateX(20px); }
+
+  .export-btn {
+    width: 100%;
+    background: var(--peach-pale);
+    border: 1.5px solid var(--peach-light);
+    color: var(--text-mid);
+    border-radius: 14px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+  }
+  .export-btn:active { opacity: 0.8; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,171,118,0.2);
+    padding: 10px 0 24px;
+    display: flex;
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    transition: all 0.2s;
+  }
+
+  .nav-icon { font-size: 22px; line-height: 1; filter: grayscale(0.3) opacity(0.5); transition: all 0.2s; }
+  .nav-label { font-size: 10px; color: var(--text-soft); font-weight: 500; letter-spacing: 0.3px; font-family: 'DM Sans', sans-serif; }
+
+  .nav-item.active .nav-icon { filter: none; }
+  .nav-item.active .nav-label { color: var(--peach-dark); font-weight: 600; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(58,36,24,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 24px 40px;
+    width: 100%;
+    max-width: 430px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-dark);
+  }
+  .modal-label { font-size: 12px; color: var(--text-soft); font-weight: 500; margin-bottom: 6px; margin-top: 14px; }
+  .modal input[type="datetime-local"] {
+    width: 100%;
+    border: 1.5px solid var(--peach-light);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-dark);
+    background: var(--peach-pale);
+    outline: none;
+  }
+  .modal-close {
+    float: right;
+    background: var(--peach-pale);
+    border: none;
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-soft);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── NOTIFICATION TOAST ── */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--text-dark);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-soft);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .pill {
+    border: 1.5px solid var(--peach-light);
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-mid);
+    background: var(--peach-pale);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pill.selected {
+    background: var(--peach);
+    border-color: var(--peach);
+    color: white;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-logo">Nessie's <span>Fast</span> 🍑</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+
+  <!-- ══ HOME TAB ══ -->
+  <div class="tab-content active" id="tab-home">
+    <div class="clock-section">
+      <div class="clock-wrap">
+        <svg class="clock-svg" viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#FFD4B8"/>
+              <stop offset="50%" style="stop-color:#FFAB76"/>
+              <stop offset="100%" style="stop-color:#FF7D5A"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="110" cy="110" r="100"/>
+          <circle class="ring-fill" id="ringFill" cx="110" cy="110" r="100"/>
+        </svg>
+        <div class="clock-inner">
+          <div class="clock-label" id="clockLabel">NOT FASTING</div>
+          <div class="clock-time" id="clockTime">0:00</div>
+          <div class="clock-phase" id="clockPhase">Start your fast ✨</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="openStartModal()">⏱ Set start time</button>
+        <button class="btn btn-primary" id="mainBtn" onclick="toggleFast()">Start Fast 🍑</button>
+      </div>
+    </div>
+
+    <!-- Phase progress -->
+    <div class="phase-bar-wrap">
+      <div class="phase-bar-label">
+        <span id="phaseBarLabel">Fasting progress</span>
+        <span id="phaseBarPct">0%</span>
+      </div>
+      <div class="phase-bar-track">
+        <div class="phase-bar-fill" id="phaseBarFill" style="width:0%"></div>
+      </div>
+      <div class="phase-dots">
+        <div class="phase-dot" data-h="0">0h</div>
+        <div class="phase-dot" data-h="4">4h</div>
+        <div class="phase-dot" data-h="8">8h</div>
+        <div class="phase-dot" data-h="12">12h</div>
+        <div class="phase-dot" data-h="16">16h</div>
+        <div class="phase-dot" data-h="18">18h</div>
+        <div class="phase-dot" data-h="24">24h</div>
+      </div>
+    </div>
+
+    <!-- Fact/Quote Card -->
+    <div class="fact-card" id="factCard">
+      <div class="fact-tag">✨ DID YOU KNOW</div>
+      <div class="fact-text" id="factText">"The body begins to tap into fat stores for energy after just a few hours without food — you're already doing something incredible."</div>
+      <div class="fact-sub" id="factSub">Start a fast to see facts about your current fasting phase.</div>
+    </div>
+
+    <button class="btn btn-ghost" style="margin: 0 auto; display:block; font-size:12px;" onclick="refreshFact()">↻ New quote</button>
+  </div>
+
+  <!-- ══ HISTORY TAB ══ -->
+  <div class="tab-content" id="tab-history">
+    <div class="section-title">Your Journey 🌿</div>
+    <div class="section-sub" id="histSubtitle">Track your fasting history & streaks</div>
+
+    <div class="streak-card">
+      <div class="streak-icon">🔥</div>
+      <div class="streak-info">
+        <div class="streak-label">Current streak</div>
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-sub" id="streakSub">days in a row</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">BEST STREAK</div>
+        <div style="font-size:22px; font-family:'Playfair Display',serif; font-weight:600;" id="bestStreakNum">0</div>
+        <div style="font-size:10px; opacity:0.8;">days</div>
+      </div>
+    </div>
+
+    <div class="quote-card">
+      <div class="quote-text" id="historyQuote">"Every meal you skip is a gift to your future self — patience is the real superpower."</div>
+      <div class="quote-author">— Motivational reminder 🍑</div>
+    </div>
+
+    <div style="font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-soft); margin-bottom:10px;">Recent fasts</div>
+    <div class="history-list" id="historyList">
+      <div class="empty-state">
+        <div class="empty-icon">🌸</div>
+        <p>Your history will bloom here once you complete your first fast.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TIPS TAB ══ -->
+  <div class="tab-content" id="tab-tips">
+    <div class="section-title">Tips & Tricks 💡</div>
+    <div class="section-sub">Science-backed guidance for a beautiful fast</div>
+
+    <div class="tip-category"><div class="tip-category-label">Getting started</div><div class="tip-category-line"></div></div>
+    <div class="tip-card"><div class="tip-emoji">💧</div><div><div class="tip-title">Hydration is everything</div><div class="tip-text">Drink 2–3 litres of water during your fast. Add a pinch of sea salt or electrolyte drops to prevent headaches and fatigue, especially in the first few days.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">☕</div><div><div class="tip-title">Black coffee & tea are your allies</div><div class="tip-text">Plain black coffee and unsweetened teas don't break a fast. They can even boost autophagy and make the fasting window feel much more manageable.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">🌙</div><div><div class="tip-title">Leverage your sleep</div><div class="tip-text">Start your fast a few hours before bed so you sleep through the hardest hours. You'll wake up already halfway through — total game changer.</div></div></div>
+
+    <div class="tip-category"><div class="tip-category-label">Breaking your fast</div><div class="tip-category-line"></div></div>
+    <div class="tip-card"><div class="tip-emoji">🥑</div><div><div class="tip-title">Break gently, always</div><div class="tip-text">After a long fast, avoid jumping straight to a big meal. Start with something light — a small salad, broth, or a few nuts — before your main meal 30 minutes later.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">🍋</div><div><div class="tip-title">Lemon water trick</div><div class="tip-text">A glass of warm water with lemon juice 15 minutes before breaking your fast prepares your digestive system and keeps blood sugar stable.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">🥗</div><div><div class="tip-title">Prioritise protein first</div><div class="tip-text">Eat protein at your first meal to support muscle retention and keep you satisfied longer. Eggs, legumes, fish, and Greek yogurt are all excellent choices.</div></div></div>
+
+    <div class="tip-category"><div class="tip-category-label">Mindset & lifestyle</div><div class="tip-category-line"></div></div>
+    <div class="tip-card"><div class="tip-emoji">🧘</div><div><div class="tip-title">Hunger is a wave, not a wall</div><div class="tip-text">Hunger peaks and passes, usually within 20–30 minutes. Drink water, go for a short walk, or do a breathing exercise — it almost always fades on its own.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">📅</div><div><div class="tip-title">Consistency over perfection</div><div class="tip-text">Missing one day is not failure. What matters is the pattern over weeks, not one imperfect day. Be gentle with yourself and simply begin again.</div></div></div>
+    <div class="tip-card"><div class="tip-emoji">🎯</div><div><div class="tip-title">Know your why</div><div class="tip-text">Write down what you want to achieve — better energy, mental clarity, metabolic health. Returning to your why on hard days is more powerful than any willpower trick.</div></div></div>
+
+    <div class="tip-category"><div class="tip-category-label">What you can have ✅</div><div class="tip-category-line"></div></div>
+
+    <div style="background:var(--white); border-radius:18px; padding:18px; margin-bottom:10px; box-shadow:0 2px 10px var(--shadow);">
+      <div style="font-size:12px; color:var(--text-soft); margin-bottom:14px; line-height:1.5;">These won't break your fast or meaningfully spike insulin. Enjoy them freely during your fasting window 🍑</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">💧</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Still water</div>
+            <div style="font-size:11px; color:var(--text-soft);">Plain or with lemon</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">🫧</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Sparkling water</div>
+            <div style="font-size:11px; color:var(--text-soft);">Unflavoured only</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">☕</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Black coffee</div>
+            <div style="font-size:11px; color:var(--text-soft);">No milk or sugar</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">🍵</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Plain tea</div>
+            <div style="font-size:11px; color:var(--text-soft);">Green, black, herbal</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">🧂</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Electrolytes</div>
+            <div style="font-size:11px; color:var(--text-soft);">No sugar, plain only</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">🍋</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Lemon water</div>
+            <div style="font-size:11px; color:var(--text-soft);">A squeeze is fine</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">🫚</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Apple cider vinegar</div>
+            <div style="font-size:11px; color:var(--text-soft);">Diluted in water</div>
+          </div>
+        </div>
+        <div style="background:var(--mint-light); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px">💊</span>
+          <div>
+            <div style="font-size:13px; font-weight:500; color:var(--text-dark);">Some supplements</div>
+            <div style="font-size:11px; color:var(--text-soft);">Non-caloric only</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#FFF5F5; border-radius:18px; padding:16px 18px; margin-bottom:18px; border-left:3px solid #FFAAAA;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.8px; color:#CC7777; text-transform:uppercase; margin-bottom:10px;">🚫 These WILL break your fast</div>
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🥛</span> Milk, cream, oat milk — any dairy or plant-based in coffee
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🍬</span> Sugar, honey, sweetened drinks or syrups
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🧃</span> Fruit juice — even a small glass spikes insulin
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🍫</span> Bone broth (has calories — save for deeper fasts)
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🥤</span> BCAAs or protein shakes — these trigger an insulin response
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-mid);">
+          <span style="font-size:16px">🍬</span> Chewing gum (most types — triggers cephalic insulin response)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS TAB ══ -->
+  <div class="tab-content" id="tab-settings">
+    <div class="section-title">Settings ⚙️</div>
+    <div class="section-sub">Personalise your fasting experience</div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">Fasting protocol</div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <div class="label-main">Fasting type</div>
+          <div class="label-sub">Choose your protocol</div>
+        </div>
+        <select id="fastType" onchange="onFastTypeChange()">
+          <option value="16:8">16:8 (Leangains)</option>
+          <option value="18:6">18:6</option>
+          <option value="20:4">20:4 (Warrior)</option>
+          <option value="OMAD">OMAD (23:1)</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="settings-row" id="customHoursRow" style="display:none">
+        <div class="settings-row-label">
+          <div class="label-main">Custom fast length</div>
+          <div class="label-sub">Hours of fasting</div>
+        </div>
+        <input type="number" id="customHours" min="4" max="72" value="16" style="width:70px; border:1.5px solid var(--peach-light); border-radius:10px; padding:6px 10px; font-family:DM Sans; font-size:13px; outline:none; background:var(--peach-pale);" onchange="saveSettings()">
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <div class="label-main">Suggested eating window</div>
+          <div class="label-sub" id="eatWindowSub">Eat between 12:00 – 20:00</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <div class="label-main">Preferred eating start</div>
+        </div>
+        <input type="time" id="eatStart" value="12:00" onchange="updateEatWindow()">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">Reminders</div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <div class="label-main">Fast start reminder</div>
+          <div class="label-sub">Notify when to begin</div>
+        </div>
+        <button class="toggle" id="toggleReminder" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">
+          <div class="label-main">Goal reached alert</div>
+          <div class="label-sub">Celebrate every win 🎉</div>
+        </div>
+        <button class="toggle on" id="toggleGoal" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">Data</div>
+      <div style="padding:14px 18px; display:flex; flex-direction:column; gap:10px;">
+        <button class="export-btn" onclick="exportData()">📤 Export data (JSON)</button>
+        <label class="export-btn" style="cursor:pointer; margin-bottom:0;">
+          📥 Import data (JSON)
+          <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+        </label>
+        <button class="export-btn" style="color:#E05555; border-color:#FFCCCC; background:#FFF0F0;" onclick="clearData()">🗑 Clear all data</button>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding: 10px 0 20px; font-size:11px; color:var(--text-soft);">
+      Nessie's Fast · made with 🍑 love
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('home', this)">
+    <div class="nav-icon">🍑</div>
+    <div class="nav-label">Fast</div>
+  </button>
+  <button class="nav-item" onclick="switchTab('history', this)">
+    <div class="nav-icon">🌿</div>
+    <div class="nav-label">History</div>
+  </button>
+  <button class="nav-item" onclick="switchTab('tips', this)">
+    <div class="nav-icon">💡</div>
+    <div class="nav-label">Tips</div>
+  </button>
+  <button class="nav-item" onclick="switchTab('settings', this)">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Settings</div>
+  </button>
+</nav>
+
+<!-- ══ START TIME MODAL ══ -->
+<div class="modal-overlay" id="startModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeStartModal()">close ✕</button>
+    <div class="modal-title">Set fast start time</div>
+    <div class="modal-label">When did you start fasting?</div>
+    <input type="datetime-local" id="manualStartTime">
+    <div style="margin-top:14px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" style="flex:1" onclick="setStartNow()">Now</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmStartTime()">Confirm ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ END FAST CONFIRM MODAL ══ -->
+<div class="modal-overlay" id="endConfirmModal">
+  <div class="modal" style="text-align:center; padding: 32px 24px 40px;">
+    <div class="ecm-emoji" style="font-size:52px; line-height:1; margin-bottom:14px;">🍑</div>
+    <div class="ecm-title" style="font-family:'Playfair Display',serif; font-size:22px; font-weight:600; color:var(--text-dark); margin-bottom:12px; line-height:1.3;">Are you sure?</div>
+    <div class="ecm-body" style="font-size:14px; color:var(--text-mid); line-height:1.65; margin-bottom:16px;"></div>
+    <div class="ecm-stat" style="display:inline-block; background:var(--peach-pale); border-radius:50px; padding:6px 16px; font-size:11px; font-weight:600; color:var(--peach-dark); letter-spacing:0.5px; margin-bottom:22px;"></div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-primary ecm-keep" style="width:100%; justify-content:center; padding:15px;" onclick="closeEndConfirm()">💪 I'll keep going!</button>
+      <button class="btn ecm-end" style="width:100%; justify-content:center; padding:15px; border-radius:50px; cursor:pointer;" onclick="confirmEndFast()">End fast anyway</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+let state = JSON.parse(localStorage.getItem('nf_state') || 'null') || {
+  isFasting: false,
+  startTime: null,
+  goalHours: 16,
+  fastType: '16:8',
+  eatStart: '12:00',
+  history: [],
+  currentStreak: 0,
+  bestStreak: 0,
+};
+
+const FACTS = {
+  0: [
+    { tag: '✨ GETTING READY', text: 'Your body is preparing. The digestive system is winding down and insulin levels are beginning their gentle descent.', sub: 'The calm before the magic begins.' },
+    { tag: '🌸 MOTIVATION', text: '"Every long journey begins with a single step — or in this case, a skipped snack."', sub: 'You\'ve got this. Start your timer and let the magic happen.' },
+    { tag: '💭 MINDSET', text: '"Fasting is not about deprivation. It\'s about space — mental, physical, and metabolic."', sub: 'This is a gift you\'re giving yourself.' },
+  ],
+  4: [
+    { tag: '⚡ 4 HOURS IN', text: 'Your body has used up most of its blood glucose. Glycogen stores are being tapped — the first step toward fat burning.', sub: 'Insulin is falling. Your fat cells are beginning to listen.' },
+    { tag: '🔬 SCIENCE', text: 'At 4 hours, your body begins shifting its primary fuel source. This is where real metabolic flexibility starts to develop.', sub: 'Drink water and stay steady — you\'re in the zone.' },
+  ],
+  8: [
+    { tag: '🔥 8 HOURS IN', text: 'Glycogen stores are significantly depleted. Your body is increasingly turning to fat as its primary fuel source. This is the sweet spot.', sub: 'Fat oxidation is ramping up. Feel the shift in your energy.' },
+    { tag: '✨ AUTOPHAGY BEGINS', text: 'Early autophagy signals are emerging — your cells are beginning their elegant self-cleaning process.', sub: 'Your body is renewing itself from the inside out.' },
+  ],
+  12: [
+    { tag: '🌟 12 HOURS IN', text: 'You\'ve officially entered a fasted state. Autophagy is meaningfully underway. Growth hormone levels are rising to protect lean muscle mass.', sub: 'This is where real cellular repair begins.' },
+    { tag: '🧬 CELLULAR MAGIC', text: 'At 12 hours, your body has cleaned up damaged cell components and is running on optimised, efficient fuel. Your brain is getting clearer.', sub: 'Mental clarity is a hallmark of this phase.' },
+  ],
+  16: [
+    { tag: '🏆 GOAL REACHED!', text: 'You\'ve completed your 16:8 fast! Autophagy is in full swing. Your insulin is at its lowest, fat burning is peak, and your brain is running on beautiful, clean ketones.', sub: '🎉 Incredible work. You should be proud of yourself.' },
+    { tag: '🔬 PEAK KETOSIS', text: 'At 16 hours, blood ketone levels are meaningfully elevated. Your brain prefers ketones — expect clarity, calm focus, and steady energy.', sub: 'This is what peak metabolic health feels like.' },
+  ],
+  18: [
+    { tag: '🚀 DEEP FAST', text: 'At 18 hours, autophagy is at its most powerful. Your body is performing deep cellular maintenance — recycling damaged proteins and organelles.', sub: 'You\'re in elite territory. This is where real regeneration happens.' },
+  ],
+  24: [
+    { tag: '👑 24 HOURS — LEGEND', text: 'A full 24-hour fast is a profound metabolic reset. Autophagy is at its absolute peak, inflammation markers are dropping, and your gut is getting a complete rest.', sub: 'You are extraordinary. Break your fast gently and celebrate.' },
+  ],
+};
+
+const HISTORY_QUOTES = [
+  '"Every meal you skip is a gift to your future self — patience is the real superpower."',
+  '"Progress isn\'t always visible. Sometimes it\'s happening quietly in your cells."',
+  '"A small act of discipline repeated becomes a revolution."',
+  '"You are not breaking habits — you are building a new relationship with yourself."',
+  '"The best project you\'ll ever work on is you."',
+];
+
+const IDLE_FACTS = [
+  { tag: '✨ DID YOU KNOW', text: '"The body begins to tap into fat stores for energy after just a few hours without food — you\'re already doing something incredible."', sub: 'Start a fast to see facts about your current fasting phase.' },
+  { tag: '🌸 MOTIVATION', text: '"Intermittent fasting isn\'t a diet. It\'s a relationship with time — and time is always on your side."', sub: 'Ready to begin? Tap Start Fast.' },
+  { tag: '🔬 SCIENCE', text: 'Studies show that regular fasting can improve insulin sensitivity, reduce inflammation, and support healthy ageing — all without changing what you eat.', sub: 'Your body knows exactly what to do.' },
+  { tag: '💭 MINDSET', text: '"The hunger you feel is temporary. The results you build are permanent."', sub: 'Every fast makes the next one easier.' },
+];
+
+// ── INIT ──
+function init() {
+  updateHeaderDate();
+  loadSettings();
+  if (state.isFasting) {
+    startClock();
+    document.getElementById('mainBtn').textContent = 'End Fast ✓';
+  }
+  updateHistoryTab();
+  setInterval(tick, 1000);
+  setInterval(updateHeaderDate, 60000);
+}
+
+function updateHeaderDate() {
+  const d = new Date();
+  document.getElementById('headerDate').textContent =
+    d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+// ── CLOCK ──
+let clockInterval = null;
+
+function getFastGoalHours() {
+  const type = state.fastType;
+  if (type === '16:8') return 16;
+  if (type === '18:6') return 18;
+  if (type === '20:4') return 20;
+  if (type === 'OMAD') return 23;
+  if (type === 'custom') return state.goalHours;
+  return 16;
+}
+
+function tick() {
+  if (!state.isFasting || !state.startTime) return;
+  const elapsed = (Date.now() - state.startTime) / 1000;
+  const goal = getFastGoalHours() * 3600;
+  const pct = Math.min(elapsed / goal, 1);
+
+  // Ring
+  const circumference = 628.3;
+  document.getElementById('ringFill').style.strokeDashoffset = circumference * (1 - pct);
+
+  // Time display
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = Math.floor(elapsed % 60);
+  document.getElementById('clockTime').textContent = `${h}:${String(m).padStart(2,'0')}`;
+  document.getElementById('clockLabel').textContent = 'FASTING';
+
+  // Phase
+  const phase = getPhase(h);
+  document.getElementById('clockPhase').textContent = phase;
+
+  // Bar
+  const barPct = Math.round(pct * 100);
+  document.getElementById('phaseBarFill').style.width = barPct + '%';
+  document.getElementById('phaseBarPct').textContent = barPct + '%';
+  document.getElementById('phaseBarLabel').textContent = `Goal: ${getFastGoalHours()}h fast`;
+
+  // Phase dots
+  document.querySelectorAll('.phase-dot').forEach(dot => {
+    const dh = parseInt(dot.dataset.h);
+    dot.classList.toggle('active', dh <= h);
+  });
+
+  // Update fact based on phase
+  updateFact(h);
+
+  // Check goal reached
+  if (pct >= 1 && !state._goalCelebrated) {
+    state._goalCelebrated = true;
+    showToast('🎉 Goal reached! Amazing work!');
+  }
+}
+
+function getPhase(hours) {
+  if (hours < 4) return 'Early fast — glucose clearing';
+  if (hours < 8) return 'Fat burning begins 🔥';
+  if (hours < 12) return 'Ketosis entering';
+  if (hours < 16) return 'Autophagy underway ✨';
+  if (hours < 18) return 'Peak fat burning 🏆';
+  if (hours < 24) return 'Deep fast — cellular repair';
+  return 'Extended fast 👑';
+}
+
+function getFacts(hours) {
+  if (hours >= 24) return FACTS[24];
+  if (hours >= 18) return FACTS[18];
+  if (hours >= 16) return FACTS[16];
+  if (hours >= 12) return FACTS[12];
+  if (hours >= 8) return FACTS[8];
+  if (hours >= 4) return FACTS[4];
+  return FACTS[0];
+}
+
+let lastFactHour = -1;
+let currentFactIdx = 0;
+
+function updateFact(hours) {
+  const bucket = Math.floor(hours / 4) * 4;
+  if (bucket !== lastFactHour) {
+    lastFactHour = bucket;
+    currentFactIdx = 0;
+    showFact(getFacts(hours)[0]);
+  }
+}
+
+function showFact(fact) {
+  if (!fact) return;
+  document.getElementById('factCard').querySelector('.fact-tag').textContent = fact.tag;
+  document.getElementById('factText').textContent = fact.text;
+  document.getElementById('factSub').textContent = fact.sub;
+}
+
+function refreshFact() {
+  if (state.isFasting && state.startTime) {
+    const h = Math.floor((Date.now() - state.startTime) / 3600000);
+    const facts = getFacts(h);
+    currentFactIdx = (currentFactIdx + 1) % facts.length;
+    showFact(facts[currentFactIdx]);
+  } else {
+    const idx = Math.floor(Math.random() * IDLE_FACTS.length);
+    showFact(IDLE_FACTS[idx]);
+  }
+}
+
+// ── FAST CONTROL ──
+function toggleFast() {
+  if (!state.isFasting) {
+    startFast(Date.now());
+  } else {
+    openEndConfirm();
+  }
+}
+
+const EARLY_MESSAGES = [
+  { emoji: '🌸', title: 'Hold on, superstar…', body: 'You\'re so close to something beautiful. Your body is working hard right now — the hunger you feel is literally fat being mobilised. This is the good part. Stay a little longer?' },
+  { emoji: '💪', title: 'Wait — don\'t give up yet!', body: 'You\'ve already done the hardest part: starting. Stopping now is like leaving a movie right before the best scene. Your cells are literally cleaning themselves. Can you give it just one more hour?' },
+  { emoji: '🔥', title: 'You\'re in the fat-burning zone!', body: 'This is exactly when the magic happens. That restless feeling? That\'s your body switching fuels — it\'s not weakness, it\'s transformation. You\'re stronger than a craving. Prove it.' },
+  { emoji: '🍑', title: 'But you\'re doing SO well…', body: 'Honestly? The fact that you\'ve made it this far already puts you ahead of most people. Don\'t let a moment of hunger undo all that discipline. Future you is cheering for present you. Keep going!' },
+  { emoji: '✨', title: 'Your body is literally healing right now.', body: 'Autophagy is underway — your cells are tidying themselves up, recycling damage, renewing from within. This is cellular beauty work. Are you really going to stop your own glow-up?' },
+];
+
+const PRAISE_MESSAGES = [
+  { emoji: '👑', title: 'YOU ABSOLUTE QUEEN.', body: 'You did it. You genuinely, completely, magnificently did it. Your discipline is stunning. Your body is thanking you in ways science can barely keep up with. You should be so deeply, ridiculously proud of yourself right now.' },
+  { emoji: '🌟', title: 'I am in AWE of you.', body: 'Not everyone can do what you just did. But you? You made it look effortless. You are the kind of person who sets a goal and then *exceeds* it. That\'s not common. That\'s extraordinary. That\'s YOU.' },
+  { emoji: '🏆', title: 'Goal smashed. Completely obliterated.', body: 'You didn\'t just reach the finish line — you sailed past it like it was nothing. Your metabolism is glowing. Your cells are celebrating. Your future self is absolutely obsessed with you.' },
+  { emoji: '💫', title: 'This is what discipline looks like.', body: 'Soft on the outside, iron on the inside. You stayed the course when it was hard, and now you\'re here — on the other side, victorious, radiant, and absolutely unstoppable. Go break your fast, you\'ve more than earned it.' },
+  { emoji: '🎉', title: 'Look at you. LOOK. AT. YOU.', body: 'Seriously. Take a moment to appreciate what you just did. You fasted like a pro, your hormones are singing, your gut got a proper rest, and you proved — again — that you have the most beautiful kind of self-control. Iconic.' },
+];
+
+function openEndConfirm() {
+  const elapsed = (Date.now() - state.startTime) / 3600000;
+  const goal = getFastGoalHours();
+  const isOver = elapsed >= goal;
+  const pct = Math.round((elapsed / goal) * 100);
+  const h = Math.floor(elapsed);
+  const m = Math.floor((elapsed % 1) * 60);
+
+  const msgs = isOver ? PRAISE_MESSAGES : EARLY_MESSAGES;
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
+
+  const confirmEl = document.getElementById('endConfirmModal');
+  confirmEl.querySelector('.ecm-emoji').textContent = msg.emoji;
+  confirmEl.querySelector('.ecm-title').textContent = msg.title;
+  confirmEl.querySelector('.ecm-body').textContent = msg.body;
+  confirmEl.querySelector('.ecm-stat').textContent = `${h}h ${m}m fasted · ${pct}% of goal`;
+
+  const keepBtn = confirmEl.querySelector('.ecm-keep');
+  const endBtn = confirmEl.querySelector('.ecm-end');
+
+  if (isOver) {
+    keepBtn.textContent = '✨ Keep going!';
+    endBtn.textContent = '🎉 End & celebrate';
+    endBtn.style.background = 'linear-gradient(135deg, #FFAB76 0%, #FF7D5A 100%)';
+  } else {
+    keepBtn.textContent = '💪 I\'ll keep going!';
+    endBtn.textContent = 'End fast anyway';
+    endBtn.style.background = 'var(--white)';
+    endBtn.style.color = 'var(--text-soft)';
+    endBtn.style.border = '1.5px solid var(--peach-light)';
+    endBtn.style.boxShadow = 'none';
+  }
+
+  confirmEl.classList.add('open');
+}
+
+function closeEndConfirm() {
+  document.getElementById('endConfirmModal').classList.remove('open');
+}
+
+function confirmEndFast() {
+  closeEndConfirm();
+  endFast();
+}
+
+function startFast(time) {
+  state.isFasting = true;
+  state.startTime = time;
+  state._goalCelebrated = false;
+  lastFactHour = -1;
+  saveState();
+  document.getElementById('mainBtn').textContent = 'End Fast ✓';
+  showToast('Fast started 🍑 You\'ve got this!');
+  tick();
+}
+
+function endFast() {
+  const elapsed = (Date.now() - state.startTime) / 3600000;
+  const entry = {
+    date: new Date(state.startTime).toISOString(),
+    duration: elapsed,
+    goal: getFastGoalHours(),
+    completed: elapsed >= getFastGoalHours(),
+  };
+  state.history.unshift(entry);
+  updateStreaks(entry);
+
+  state.isFasting = false;
+  state.startTime = null;
+  state._goalCelebrated = false;
+  saveState();
+
+  document.getElementById('mainBtn').textContent = 'Start Fast 🍑';
+  document.getElementById('clockLabel').textContent = 'NOT FASTING';
+  document.getElementById('clockTime').textContent = '0:00';
+  document.getElementById('clockPhase').textContent = 'Start your fast ✨';
+  document.getElementById('ringFill').style.strokeDashoffset = '628.3';
+  document.getElementById('phaseBarFill').style.width = '0%';
+  document.getElementById('phaseBarPct').textContent = '0%';
+  showFact(IDLE_FACTS[0]);
+  lastFactHour = -1;
+
+  const dur = Math.floor(elapsed);
+  const mins = Math.floor((elapsed - dur) * 60);
+  showToast(`Fast ended: ${dur}h ${mins}m 🌸`);
+  updateHistoryTab();
+}
+
+function updateStreaks(entry) {
+  if (entry.completed) {
+    state.currentStreak = (state.currentStreak || 0) + 1;
+    if (state.currentStreak > (state.bestStreak || 0)) state.bestStreak = state.currentStreak;
+  } else {
+    state.currentStreak = 0;
+  }
+}
+
+// ── MODAL ──
+function openStartModal() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+  document.getElementById('manualStartTime').value = local;
+  document.getElementById('startModal').classList.add('open');
+}
+function closeStartModal() {
+  document.getElementById('startModal').classList.remove('open');
+}
+function setStartNow() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+  document.getElementById('manualStartTime').value = local;
+}
+function confirmStartTime() {
+  const val = document.getElementById('manualStartTime').value;
+  if (!val) return;
+  const t = new Date(val).getTime();
+  closeStartModal();
+  if (!state.isFasting) {
+    startFast(t);
+  } else {
+    state.startTime = t;
+    state._goalCelebrated = false;
+    saveState();
+    showToast('Start time updated ✓');
+    tick();
+  }
+}
+
+// ── HISTORY ──
+function updateHistoryTab() {
+  document.getElementById('streakNum').textContent = state.currentStreak || 0;
+  document.getElementById('bestStreakNum').textContent = state.bestStreak || 0;
+  document.getElementById('historyQuote').textContent = HISTORY_QUOTES[Math.floor(Math.random() * HISTORY_QUOTES.length)];
+
+  const list = document.getElementById('historyList');
+  if (!state.history || state.history.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🌸</div><p>Your history will bloom here once you complete your first fast.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = state.history.slice(0, 30).map(e => {
+    const d = new Date(e.date);
+    const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const dur = Math.floor(e.duration);
+    const mins = Math.floor((e.duration - dur) * 60);
+    const pct = Math.round((e.duration / e.goal) * 100);
+    const icon = e.completed ? '✅' : pct >= 75 ? '🔶' : '💔';
+    const iconClass = e.completed ? 'success' : pct >= 75 ? 'partial' : 'fail';
+    const badgeClass = e.completed ? 'badge-success' : 'badge-partial';
+    const badgeText = e.completed ? 'Completed ✓' : `${pct}% of goal`;
+    return `<div class="history-item">
+      <div class="history-icon ${iconClass}">${icon}</div>
+      <div class="history-meta">
+        <div class="history-date">${dateStr}</div>
+        <div class="history-dur">${dur}h ${mins}m fasted</div>
+      </div>
+      <span class="history-badge ${badgeClass}">${badgeText}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── SETTINGS ──
+function loadSettings() {
+  document.getElementById('fastType').value = state.fastType || '16:8';
+  document.getElementById('eatStart').value = state.eatStart || '12:00';
+  updateEatWindow();
+  document.getElementById('customHoursRow').style.display = state.fastType === 'custom' ? 'flex' : 'none';
+  if (state.goalHours) document.getElementById('customHours').value = state.goalHours;
+}
+
+function onFastTypeChange() {
+  const val = document.getElementById('fastType').value;
+  state.fastType = val;
+  document.getElementById('customHoursRow').style.display = val === 'custom' ? 'flex' : 'none';
+  updateEatWindow();
+  saveState();
+}
+
+function updateEatWindow() {
+  const start = document.getElementById('eatStart').value || '12:00';
+  state.eatStart = start;
+  const goal = getFastGoalHours();
+  const eating = 24 - goal;
+  const [sh, sm] = start.split(':').map(Number);
+  const endMinutes = (sh * 60 + sm + eating * 60) % (24 * 60);
+  const eh = Math.floor(endMinutes / 60);
+  const em = endMinutes % 60;
+  const fmt = t => String(t).padStart(2,'0');
+  document.getElementById('eatWindowSub').textContent = `Eat between ${fmt(sh)}:${fmt(sm)} – ${fmt(eh)}:${fmt(em)}`;
+  saveState();
+}
+
+function saveSettings() {
+  state.goalHours = parseInt(document.getElementById('customHours').value) || 16;
+  saveState();
+}
+
+// ── DATA I/O ──
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nessies-fast-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('Data exported 📤');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      Object.assign(state, imported);
+      saveState();
+      loadSettings();
+      updateHistoryTab();
+      showToast('Data imported ✓');
+    } catch { showToast('Import failed — invalid file'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearData() {
+  if (!confirm('Clear all fasting data? This cannot be undone.')) return;
+  state = { isFasting: false, startTime: null, goalHours: 16, fastType: '16:8', eatStart: '12:00', history: [], currentStreak: 0, bestStreak: 0 };
+  saveState();
+  updateHistoryTab();
+  loadSettings();
+  showToast('All data cleared 🗑');
+}
+
+// ── HELPERS ──
+function saveState() {
+  localStorage.setItem('nf_state', JSON.stringify(state));
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab === 'history') updateHistoryTab();
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function startClock() {
+  // Already running via setInterval tick
+}
+
+init();
+</script>
+</body>
+</html>
